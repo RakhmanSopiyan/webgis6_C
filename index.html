@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta tags for responsive design -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, user-scalable=no, maximum-scale=1, width=device-width">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <!-- Title on the browser tab -->
+    <title>Tenjo Tata Ruang</title>
+
+    <!-- Leaflet CSS and JavaScript Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="https://unpkg.com/togeojson@2.0.0/togeojson.js"></script>
+    <script src="https://unpkg.com/@mapbox/turf@6.5.0/turf.min.js"></script>
+    <script src="https://unpkg.com/kml-parser@1.0.0/kml-parser.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.72.0/L.Control.Locate.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.76.2/L.Control.Locate.min.css" />
+    <!-- Leaflet Grouped Layer Control -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-groupedlayercontrol/0.6.0/leaflet.groupedlayercontrol.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-groupedlayercontrol/0.6.0/leaflet.groupedlayercontrol.min.js"></script>
+    <!-- Leaflet Geoman Layer Control -->
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css" />
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.min.js"></script>
+
+    <style>
+    html, body, #map {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    table {
+        font-family: Arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #B6DBEE;
+    }
+
+    .info {
+        padding: 6px 8px;
+        font: 14px/16px Arial, Helvetica, sans-serif;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+    }
+
+    .info h2 {
+        margin: 0 0 5px;
+        color: #777;
+    }
+
+    .popup-info {
+        max-width: 300px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .popup-info h3 {
+        margin-top: 0;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .popup-info p {
+        margin: 5px 0;
+        font-size: 12px;
+    }
+
+    .upload-container {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+    }
+
+    .leaflet-control-layers {
+        font-size: 13px;
+        max-height: 750px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    
+    .legend-container {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 8px;
+        border-radius: 6px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+    }
+
+    .legend-button {
+        background: #0078A8;
+        color: white;
+        border: none;
+        padding: 6px 10px;
+        font-size: 13px;
+        cursor: pointer;
+        border-radius: 4px;
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    .legend-content {
+        text-align: center;
+    }
+
+    /* Media Query: Untuk layar kecil seperti HP */
+    @media only screen and (max-width: 768px) {
+        html, body, #map {
+            height: 92vh;
+            width: 100vw;
+        }
+
+        table {
+            font-size: 6px;
+        }
+
+        td, th {
+            padding: 6px;
+        }
+
+        .info {
+            font-size: 12px;
+            padding: 1px;
+        }
+
+        .popup-info {
+            max-width: 50vw;
+            max-height: 50vh;
+        }
+
+        .popup-info h3 {
+            font-size: 7px;
+        }
+
+        .popup-info p {
+            font-size: 11px;
+        }
+
+        .upload-container {
+            top: 5px;
+            left: 5px;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .leaflet-control-layers {
+            font-size: 6px;
+            max-height: 650px;
+        }
+    }
+    
+    /* Responsif untuk layar kecil (HP) */
+    @media only screen and (max-width: 768px) {
+        .legend-container {
+            font-size: 12px;
+            padding: 6px;
+        }
+
+        .legend-button {
+            font-size: 12px;
+            padding: 5px 8px;
+        }
+
+        .legend-content img {
+            width: 160px; /* kecilkan gambar legenda */
+        }
+    }
+
+    </style>
+</head>
+<body>
+    <!-- HTML Block for the map -->
+    <div id="map"></div>
+
+    <!-- Tambahkan fitur pencarian di WebGIS Anda -->
+    <div id="search-container" style="position: absolute; bottom: 20px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.2);">
+        <input type="text" id="search-input" placeholder="Cari kode bidang..." style="width: 200px;" />
+        <button onclick="searchField()">Cari</button>
+    </div>
+
+
+    <script>
+        /* Initial Map Setup */
+        var map = L.map('map').setView([-6.3421914, 106.4605984], 13);
+
+        /* Base Maps */
+        var baseMaps = {
+            'OpenStreetMap': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }),
+            'Google Satellite': L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                attribution: '&copy; Google Maps'
+            })
+        };
+
+        const wmsUrl = "https://geoserver.jabarprov.go.id/geoserver/basis_data_dbmpr/wms";
+        const wmsUrl2 = "https://gistaru.bantenprov.go.id:8866/geoserver/webgis_sipr/wms";
+        const wmsUrl3 = "https://bhumi.atrbpn.go.id/mprx/service";
+        const wmsUrl4 = "https://bhumi.atrbpn.go.id/expapi/bhumigeos/umum/wms"
+
+        // Tambahkan peta OpenStreetMap ke dalam map
+        baseMaps['OpenStreetMap'].addTo(map);
+
+        // Definisi layer WMS
+        const wmsLayerRTRWP = L.tileLayer.wms(wmsUrl, {
+            layers: 'basis_data_dbmpr:rtrwp_p_r_ar',
+            format: 'image/png',
+            transparent: true,
+            version: '1.3.0',
+            attribution: '&copy; Kab Bogor'
+        });
+
+        const wmsLayerBandungEnergi = L.tileLayer.wms(wmsUrl, {
+            layers: 'basis_data_dbmpr:rtrw_bogor_energi_ln',
+            format: 'image/png',
+            transparent: true,
+            version: '1.3.0',
+            attribution: '&copy; Kab Bogor'
+        });
+
+        const wmsLayerBandungTransportasi2 = L.tileLayer.wms(wmsUrl, {
+            layers: 'basis_data_dbmpr:rtrw_bogor_transportasi_ln',
+            format: 'image/png',
+            transparent: true,
+            version: '1.3.0',
+            attribution: '&copy; Kab Bogor'
+        });
+
+        const wmsLayerBandungTelekomunikasi = L.tileLayer.wms(wmsUrl, {
+            layers: 'basis_data_dbmpr:rtrw_bogor_telekomunikasi_pt',
+            format: 'image/png',
+            transparent: true,
+            version: '1.3.0',
+            attribution: '&copy; Kab Bogor'
+        });
+
+        const wmsLayerBantenTransportasi = L.tileLayer.wms(wmsUrl2, {
+            layers: 'webgis_sipr:SISTEM JARINGAN TRANSPORTASI',
+            format: 'image/png',
+            transparent: true,
+            version: '1.3.0',
+            attribution: '© GeoServer Banten'
+        });
+
+        const wmsLayerPersil = L.tileLayer.wms(wmsUrl3, {
+            layers: 'bhumi_persil',
+            format: 'image/png',
+            transparent: true,
+            version: '1.3.0',
+            attribution: '&copy; Bhumi ATR/BPN'
+        });
+
+        const wmsZNT = L.tileLayer.wms(wmsUrl4, {
+            layers: 'ZNT_persil',
+            format: 'image/png',
+            transparent: true,
+            version: '1.3.0',
+            attribution: '&copy; ZNT ATR/BPN'
+        });
+  
+        /* Layer Groups */
+        var layers = {
+            hgb_bpn: createLayer('#FF6347'),
+            sph_bpn: createLayer('#FF6347'),
+            HGB_Gabungan: createLayer('#330033'),
+            adminkabupaten: createLayer('#FF6347'),
+            sph: createLayer('#4682B4'),
+            bidangLainnya: createLayer('#FF1493'),
+            prosesSPH: createLayer('#3d3d5c'),
+            prosesPBT: createLayer('#4d0099'),
+            proses_PBT: createLayer('#7a0099'),
+            prosesHGB: createLayer('#800060'),
+            bidangDijual: createLayer('#f70707'),
+            bidangDijaminkan: createLayer('#20B2AA'),
+            bidangSengketa: createLayer('#FF69B4'),
+            siteplan: createLayer('#1E90FF'),
+            batasAdministrasi: createLayer('#FFA500'),
+            Kws_Hutan: createLayer('#2E8B57'),
+            jaringanJalan: createLayer('#A0522D'),
+            rencana_pembebasan: createLayer('#663d00'),
+            tataRuang: createLayer('#FF8C00')
+        };
+
+        var groupedOverlays = {
+            "TMKH": {
+                "Bidang Diajukan": layers["HGB_Gabungan"],
+                "Bidang Ditukar": layers["adminkabupaten"],
+                "Kawasan Hutan": layers["Kws_Hutan"]
+            },
+            "Infrastruktur & Tata Ruang": {
+                "Boundary Masterplan": layers["siteplan"],
+                "Batas Administrasi": layers["batasAdministrasi"],
+                "Tata Ruang": wmsLayerRTRWP,
+                "Jaringan Jalan Banten": wmsLayerBantenTransportasi,
+                "Jaringan Jalan Bogor": wmsLayerBandungTransportasi2,
+                "Jaringan Listrik": wmsLayerBandungEnergi,
+                "Jaringan Telekomunikasi": wmsLayerBandungTelekomunikasi
+            }
+        };
+
+        var layerControl = L.control.groupedLayers(baseMaps, groupedOverlays, {
+            collapsed: false
+        });
+        layerControl.addTo(map);
+        
+        // Pastikan DOM dan Leaflet control sudah ter-load
+        setTimeout(function () {
+            const controlLayer = document.querySelector(".leaflet-control-layers");
+        
+            if (controlLayer) {
+                // Pastikan control layer tetap di kanan
+                const wrapper = document.createElement("div");
+                wrapper.style.position = "absolute";
+                wrapper.style.top = "2px";
+                wrapper.style.right = "5px"; // Pindahkan ke kanan
+                wrapper.style.zIndex = "1000";
+                wrapper.style.background = "white";
+                wrapper.style.padding = "2px";
+                wrapper.style.borderRadius = "2px";
+                wrapper.style.boxShadow = "0 0 2px rgba(0, 0, 0, 0.3)";
+        
+                // Tambahkan tombol minimize
+                wrapper.innerHTML = `
+                    <button id="toggle-layer" class="legend-button">Layer ▼</button>
+                    <div id="layer-content" style="display: block;"></div>
+                `;
+        
+                // Sisipkan ke dalam map
+                document.getElementById("map").appendChild(wrapper);
+                document.getElementById("layer-content").appendChild(controlLayer);
+        
+                // Event toggle
+                document.getElementById("toggle-layer").addEventListener("click", function () {
+                    const content = document.getElementById("layer-content");
+                    if (content.style.display === "none") {
+                        content.style.display = "block";
+                        this.innerHTML = "Layer ▼";
+                    } else {
+                        content.style.display = "none";
+                        this.innerHTML = "Layer ▲";
+                    }
+                });
+            } else {
+                console.warn("leaflet-control-layers tidak ditemukan");
+            }
+        }, 200);
+
+        // Variable to keep track of the currently selected layer
+        let selectedLayer = null;
+
+        /* Function to create a layer */
+        function createLayer(fillColor) {
+            return L.geoJson(null, {
+                style: function (feature) {
+                    return {
+                        fillColor: fillColor,
+                        color: 'black',
+                        weight: 1,
+                        fillOpacity: 0.2
+                    };
+                },
+                onEachFeature: function (feature, layer) {
+                    layer.on({
+                        click: function (e) {
+                            handleClick(layer, feature);
+                        }
+                    });
+                }
+            });
+        }
+
+        /* GeoJSON Data Load Example */
+        $.getJSON("data/hgb_bpn.geojson", function (data) {
+            layers.hgb_bpn.addData(data);
+        });
+        $.getJSON("data/sph_bpn.geojson", function (data) {
+            layers.sph_bpn.addData(data);
+        });
+        $.getJSON("data/Hutan Diajukan.geojson", function (data) {
+            layers.HGB_Gabungan.addData(data);
+        });
+        $.getJSON("data/Hutan Ditukar.geojson", function (data) {
+            layers.adminkabupaten.addData(data);
+        });
+        $.getJSON("data/SPH_Longlat.geojson", function (data) {
+            layers.sph.addData(data);
+        });
+        $.getJSON("data/bidang_lainnya.geojson", function (data) {
+            layers.bidangLainnya.addData(data);
+        });
+        $.getJSON("data/Bangunan_SPH.geojson", function (data) {
+            layers.prosesSPH.addData(data);
+        });
+        $.getJSON("data/Bangunan_HGB.geojson", function (data) {
+            layers.prosesPBT.addData(data);
+        });
+        $.getJSON("data/proses_PBT.geojson", function (data) {
+            layers.proses_PBT.addData(data);
+        });
+        $.getJSON("data/proses_hgb.geojson", function (data) {
+            layers.prosesHGB.addData(data);
+        });
+        $.getJSON("data/bidang_dijual.geojson", function (data) {
+            layers.bidangDijual.addData(data);
+        });
+        $.getJSON("data/bidang_dijaminkan.geojson", function (data) {
+            layers.bidangDijaminkan.addData(data);
+        });
+        $.getJSON("data/bidang_sengketa.geojson", function (data) {
+            layers.bidangSengketa.addData(data);
+        });
+        $.getJSON("data/Boundary Podomoro.geojson", function (data) {
+            layers.siteplan.addData(data);
+        });
+        $.getJSON("data/Kws_Hutan.geojson", function (data) {
+            layers.Kws_Hutan.addData(data);
+        });
+        $.getJSON("data/batas_administrasi.geojson", function (data) {
+            layers.batasAdministrasi.addData(data);
+        });
+        $.getJSON("data/kawasan_hutan.geojson", function (data) {
+            layers.kawasanHutan.addData(data);
+        });
+        $.getJSON("data/jaringan_jalan.geojson", function (data) {
+            layers.jaringanJalan.addData(data);
+        });
+        $.getJSON("data/tata_ruang.geojson", function (data) {
+            layers.tataRuang.addData(data);
+        });
+        $.getJSON("data/rencana_pembebasan.geojson", function (data) {
+            layers.rencana_pembebasan.addData(data);
+        });
+
+        /* Function to handle click events on layers */
+        function handleClick(layer, feature) {
+            if (selectedLayer) {
+                selectedLayer.setStyle({ fillOpacity: 0.2 });
+            }
+            layer.setStyle({ fillOpacity: 1 });
+            selectedLayer = layer;
+
+            var popupContent = '<div class="popup-info">';
+            popupContent += '<h3>Informasi Lengkap</h3>';
+            popupContent += '<table>';
+            popupContent += '<tr><th>Atribut</th><th>Nilai</th></tr>';
+            for (var key in feature.properties) {
+                if (feature.properties.hasOwnProperty(key)) {
+                    popupContent += '<tr><td>' + key + '</td><td>' + feature.properties[key] + '</td></tr>';
+                }
+            }
+            popupContent += '</table>';
+            popupContent += '</div>';
+
+            layer.bindPopup(popupContent).openPopup();
+        }
+
+        L.control.locate({
+            position: 'bottomleft',
+            drawCircle: true,  // Optional: Draw a circle around the location
+            follow: true,  // Auto-follow the location
+            setView: true,  // Center map on user location
+            keepCurrentZoomLevel: true,
+            icon: 'fa fa-location-arrow',  // Optional: Icon for location button
+            strings: { title: "Tampilkan Lokasi Saya" },
+        }).addTo(map);
+
+        const socket = new WebSocket("ws://localhost:8765");
+
+        // Tambahkan kontrol legenda
+        var legend = L.control({ position: "bottomleft" });
+
+        legend.onAdd = function () {
+            var div = L.DomUtil.create("div", "legend-container");
+
+            div.innerHTML = `
+                <button id="toggle-legend" class="legend-button">Legenda ▲</button>
+                <div id="legend-content" style="display:none">
+                    <img src="assets/Legenda.png" width="200">
+                </div>
+            `;
+
+            // Prevent map interactions while clicking legend
+            L.DomEvent.disableClickPropagation(div);
+            L.DomEvent.disableScrollPropagation(div);
+
+            div.style.position = "relative";
+            div.style.left = "90px";
+            div.style.bottom = "70px";
+
+            return div;
+        };
+
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create("div", "legend-container");
+            
+            div.innerHTML = `
+                <button id="toggle-legend" class="legend-button">Legenda ▲</button>
+                <div id="legend-content" class="legend-content" style="display: none;">
+                    <img src="assets/Legenda.png" alt="Legenda Peta" width="150px">
+                </div>
+            `;
+
+            return div;
+        };
+
+        // legend.addTo(map);
+
+        // Tambahkan event listener untuk tombol toggle
+        document.addEventListener("DOMContentLoaded", function () {
+            var toggleButton = document.getElementById("toggle-legend");
+            var legendContent = document.getElementById("legend-content");
+
+            toggleButton.addEventListener("click", function () {
+                if (legendContent.style.display === "none") {
+                    legendContent.style.display = "block";
+                    toggleButton.innerHTML = "Legenda ▼";
+                } else {
+                    legendContent.style.display = "none";
+                    toggleButton.innerHTML = "Legenda ▲";
+                }
+            });
+        });
+
+        // Kirim pesan ke server WebSocket
+        socket.onopen = function () {
+            console.log("Terhubung ke WebSocket!");
+            socket.send("Halo dari WebGIS!");
+        };
+
+        // Terima pesan dari server
+        socket.onmessage = function (event) {
+            console.log("Pesan diterima:", event.data);
+        };
+
+        // Tangani error
+        socket.onerror = function (error) {
+            console.log("WebSocket Error:", error);
+        };
+
+        // Jika koneksi terputus
+        socket.onclose = function () {
+            console.log("Koneksi WebSocket ditutup");
+        };
+
+        // === ENABLE GEOMAN DRAWING TOOLS ===
+        map.pm.addControls({
+            position: 'topleft',
+            drawMarker: true,
+            drawPolyline: true,
+            drawPolygon: true,
+            drawRectangle: true,
+            drawCircle: false,
+            drawCircleMarker: false,
+
+            editMode: true,
+            dragMode: true,
+            cutPolygon: true,
+            removalMode: true,
+
+            // This is the key for horizontal layout
+            toggleDraw: false,   // optional, avoids collapsing
+            oneBlock: false      // makes all buttons in one line
+        });
+
+        /* =========================DRAWN ITEMS LAYER========================= */
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        /* =========================AREA CALCULATION (TURF)========================= */
+        function calculateAreaHa(layer) {
+            const geojson = layer.toGeoJSON();
+            const areaM2 = turf.area(geojson);
+            return (areaM2 / 10000).toFixed(3);
+        }
+
+        /* =========================CREATE POLYGON========================= */
+        map.on("pm:create", function (e) {
+            const layer = e.layer;
+            drawnItems.addLayer(layer);
+
+            const areaHa = calculateAreaHa(layer);
+
+            layer.feature = layer.feature || {
+                type: "Feature",
+                properties: {}
+            };
+
+            layer.feature.properties.luas_ha = areaHa;
+
+            layer.bindPopup(`<b>Luas:</b> ${areaHa} Ha`).openPopup();
+
+            // 🔹 SAVE TO BACKEND
+            fetch("http://localhost:5000/api/features", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(layer.toGeoJSON())
+            })
+            .then(res => res.json())
+            .then(() => console.log("Polygon saved"));
+        });
+
+        /* =========================UPDATE POLYGON========================= */
+        map.on("pm:update", function (e) {
+            e.layer.eachLayer(layer => {
+                const areaHa = calculateAreaHa(layer);
+                layer.feature.properties.luas_ha = areaHa;
+
+                layer.bindPopup(`<b>Luas:</b> ${areaHa} Ha`);
+
+                fetch("http://localhost:5000/api/features", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(layer.toGeoJSON())
+                });
+            });
+        });
+
+        /* 5️⃣ LOAD FEATURES FROM BACKEND (POINT 3️⃣ YOU ASKED ABOUT) */
+        fetch("http://localhost:5000/api/features")
+            .then(res => res.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    onEachFeature: (feature, layer) => {
+
+                        // ✅ 1️⃣ WAJIB: masukkan ke drawnItems
+                        drawnItems.addLayer(layer);
+
+                        // ✅ 2️⃣ Popup dari atribut
+                        if (feature.properties?.luas_ha) {
+                            layer.bindPopup(
+                                `<b>Luas:</b> ${feature.properties.luas_ha} Ha`
+                            );
+                        }
+
+                        // (opsional tapi direkomendasikan)
+                        layer.pm.enable();
+                    }
+                });
+            })
+            .catch(err => console.error("API error:", err));
+
+    </script>
+</body>
+</html>
