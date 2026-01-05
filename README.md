@@ -15,5 +15,5 @@
 </p>
 
 <p align = "justify"> 
-  Untuk melihat lebih jelas nya bisa klik <a href = "https://bit.ly/19611156_DanangBagusWibowo"> disini </a> 
+  Untuk melihat lebih jelas nya bisa klik <a href = "(https://github.com/RakhmanSopiyan/webgis6_C)"> disini </a> 
 </p>
