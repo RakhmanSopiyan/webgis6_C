@@ -11,7 +11,6 @@
 </p>
 
 <p align="center">
-  <img src="ss webgis uas sig.PNG"></a>
 </p>
 
 <p align = "justify"> 
